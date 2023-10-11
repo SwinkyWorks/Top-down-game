@@ -138,6 +138,7 @@ try:
         playerDir = None
         grid = None
         name = Path("savedData.txt").read_text().split("\n")[0][10:]
+        preferredColor = Path("savedData.txt").read_text().split("\n")[1][7:]
         maxMovementDelay = 0.333
         movementDelay = 0
         maxClickDelay = 0.033
@@ -241,15 +242,15 @@ try:
         invClickDelay = 0
         invHoldingItemstack = ""
         savedRotation = None
-        data = save.read_text()
+        data = ""
         if not data:
             running = False
-        lines = data.split("\n")
-        players = lines[0][9:].split(", ")
-        locations = lines[1][11:].split(", ")
-        playerPrevPositions = ",,,".join(locations).split(",,,")
-        mostRecentPlayerPositions = ",,,".join(locations).split(",,,")
-        playerAnims = [0.0]*len(players)
+        lines = []
+        players = []
+        locations = []
+        playerPrevPositions = []
+        mostRecentPlayerPositions = []
+        playerAnims = []
         maxPlayerAnim = 0.333
         SERVERMODE = "none"
         host = ""
@@ -295,6 +296,10 @@ try:
                 colors = lines[4][8:].split(", ")
                 directions = lines[5][12:].split(", ")
                 grid = lines[7:]
+                if len(players) > len(playerPrevPositions):
+                    for i in range(len(players) - len(playerPrevPositions)):
+                        playerPrevPositions.append(locations[i])
+                        mostRecentPlayerPositions.append(locations[i])
                 newGrid = []
                 if playerPrevPositions:
                     for i in range(len(players)):
@@ -985,6 +990,12 @@ try:
                                     threading.Thread(
                                         target=server.serve_forever).start()
                                     server_running = True
+                                if SERVERMODE == "singleplayer" or SERVERMODE == "host":
+                                    pass
+                                elif SERVERMODE == "join":
+                                    if requests.get("http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayerTest {name}").text == 0:
+                                        requests.post(
+                                            "http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayer")
 
                 screen.fill("black")
                 pg.draw.circle(screen, "white",
