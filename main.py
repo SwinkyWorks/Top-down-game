@@ -991,11 +991,37 @@ try:
                                         target=server.serve_forever).start()
                                     server_running = True
                                 if SERVERMODE == "singleplayer" or SERVERMODE == "host":
-                                    pass
+                                    lines = save.read_text().split("\n")
+                                    defaultAtributes = lines[6][20:].split(
+                                        ", ")
+                                    if len(lines[0].split(", ")) == 1:
+                                        lines[0] += name  # Username
+                                        # Location
+                                        lines[1] += defaultAtributes[0]
+                                        # Inventory
+                                        lines[2] += defaultAtributes[1]
+                                        # Last signal
+                                        lines[3] += defaultAtributes[2]
+                                        lines[4] += preferredColor  # Color
+                                        # Direction
+                                        lines[3] += defaultAtributes[3]
+                                    else:
+                                        lines[0] += ", " + name  # Username
+                                        lines[1] += ", " + \
+                                            defaultAtributes[0]  # Location
+                                        lines[2] += ", " + \
+                                            defaultAtributes[1]  # Inventory
+                                        lines[3] += ", " + \
+                                            defaultAtributes[2]  # Last signal
+                                        lines[4] += ", " + \
+                                            preferredColor  # Color
+                                        lines[3] += ", " + \
+                                            defaultAtributes[3]  # Direction
+                                    save.write_text("\n".join(lines))
                                 elif SERVERMODE == "join":
                                     if requests.get("http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayerTest {name}").text == 0:
                                         requests.post(
-                                            "http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayer")
+                                            "http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayer {name} {preferredColor}")
 
                 screen.fill("black")
                 pg.draw.circle(screen, "white",
@@ -1042,7 +1068,7 @@ try:
 
     run()
 except BaseException as error:
-    if (runningInEditor):
+    if runningInEditor:
         raise error
     else:
         Path("errorLog.txt").write_text(Path("errorLog.txt").read_text() +

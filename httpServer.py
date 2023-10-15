@@ -91,6 +91,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 lines[3] += ", " + defaultAtributes[2]  # Last signal
                 lines[4] += ", " + resultSplit[2]  # Color
                 lines[3] += ", " + defaultAtributes[3]  # Direction
+            save.write_text("\n".join(lines))
             self.wfile.write(
                 bytes('{"response":"Request completed"}', "utf-8"))
 
