@@ -1,2 +1,0 @@
-Username: Test
-Color: White
