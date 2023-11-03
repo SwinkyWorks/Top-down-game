@@ -1,6 +1,6 @@
 # Top-down-game
 
-___NOTE: This game does not work; any joining of a world will likely corrupt it in a weird way. Do not download this now.___  
+___NOTE: This game does not have automatic updates. You will need to download any new versions you want by yourself and transfer or re-initialize the "savedData.txt" and "save1.txt" files.___  
   
 This is a prototype game. Currently, there is no way to initialize your username within the app. Take the following steps to manually initialize the "savedData.txt" before that is the case:
 1. Add `Username: [username]`, where `[username]` is your username.
