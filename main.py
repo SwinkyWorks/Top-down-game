@@ -93,28 +93,39 @@ save = Path("saves/save1.txt")
 
 
 def setAttribute(playerIndex: int, attr: int, value: str):
-    if len(save.read_text().split("\n")[0].split(", ")) > playerIndex:
-        if attr > 5 or attr < 0:
-            raise IndexError("There is no attribute of that index!")
-        lines = save.read_text().split("\n")
-        prefix = lines[attr].split(": ")[0]
-        allAttributeValues = lines[attr].split(": ")[1].split(", ")
-        allAttributeValues[playerIndex] = value
-        lines[attr] = prefix + ": " + ", ".join(allAttributeValues)
-        save.write_text("\n".join(lines))
-    else:
-        raise IndexError("There is no player of that index!")
+    finished = False
+    while not finished:
+        try:
+            if len(save.read_text().split("\n")[0].split(", ")) > playerIndex:
+                if attr > 5 or attr < 0:
+                    finished = True
+                    continue
+                lines = save.read_text().split("\n")
+                prefix = lines[attr].split(": ")[0]
+                allAttributeValues = lines[attr].split(": ")[1].split(", ")
+                allAttributeValues[playerIndex] = value
+                lines[attr] = prefix + ": " + ", ".join(allAttributeValues)
+                save.write_text("\n".join(lines))
+                finished = True
+        except IndexError:
+            continue
 
 
 def setBlock(x: int, y: int, value: str):
-    lines = save.read_text().split("\n")
-    cells = lines[y+8].split(",")
-    cells[x] = value
-    lines[y+8] = ",".join(cells)
-    save.write_text("\n".join(lines))
+    finished = False
+    while not finished:
+        try:
+            lines = save.read_text().split("\n")
+            cells = lines[y+8].split(",")
+            cells[x] = value
+            lines[y+8] = ",".join(cells)
+            save.write_text("\n".join(lines))
+            finished = True
+        except IndexError:
+            continue
 
 
-runningInEditor = True
+runningInEditor = False
 server_running = False
 server = HTTPServer((socket.gethostbyname(
     socket.gethostname()), 0), HTTPRequestHandler)
@@ -1030,7 +1041,7 @@ try:
                                                 defaultAtributes[3]
                                         save.write_text("\n".join(lines))
                                 elif SERVERMODE == "join":
-                                    if "0" in requests.get("http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayerTest {name}").text:
+                                    if "0" in requests.get("http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", data=f"joinPlayerTest {name}").text:
                                         requests.post(
                                             "http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayer {name} {preferredColor}")
 
