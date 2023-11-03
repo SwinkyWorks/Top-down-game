@@ -10,3 +10,4 @@ In the end, your "savedData.txt" file should take the following format (the Unic
 Username: Example⏎
 Color: White
 ```
+Run "main.py" to play the game, and run "server.py" to just launch a server. With "server.py", it will open a window; close the window to shut down the server.
