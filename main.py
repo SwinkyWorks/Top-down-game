@@ -93,30 +93,45 @@ save = Path("saves/save1.txt")
 
 
 def setAttribute(playerIndex: int, attr: int, value: str):
-    if len(save.read_text().split("\n")[0].split(", ")) > playerIndex:
-        if attr > 5 or attr < 0:
-            raise IndexError("There is no attribute of that index!")
-        lines = save.read_text().split("\n")
-        prefix = lines[attr].split(": ")[0]
-        allAttributeValues = lines[attr].split(": ")[1].split(", ")
-        allAttributeValues[playerIndex] = value
-        lines[attr] = prefix + ": " + ", ".join(allAttributeValues)
-        save.write_text("\n".join(lines))
-    else:
-        raise IndexError("There is no player of that index!")
+    finished = False
+    while not finished:
+        try:
+            if len(save.read_text().split("\n")[0].split(", ")) > playerIndex:
+                if attr > 5 or attr < 0:
+                    finished = True
+                    continue
+                lines = save.read_text().split("\n")
+                prefix = lines[attr].split(": ")[0]
+                allAttributeValues = lines[attr].split(": ")[1].split(", ")
+                allAttributeValues[playerIndex] = value
+                lines[attr] = prefix + ": " + ", ".join(allAttributeValues)
+                save.write_text("\n".join(lines))
+                finished = True
+        except IndexError:
+            continue
 
 
 def setBlock(x: int, y: int, value: str):
-    lines = save.read_text().split("\n")
-    cells = lines[y+7].split(",")
-    cells[x] = value
-    lines[y+7] = ",".join(cells)
-    save.write_text("\n".join(lines))
+    finished = False
+    while not finished:
+        try:
+            lines = save.read_text().split("\n")
+            cells = lines[y+8].split(",")
+            cells[x] = value
+            lines[y+8] = ",".join(cells)
+            save.write_text("\n".join(lines))
+            finished = True
+        except IndexError:
+            continue
 
 
-runningInEditor = True
+runningInEditor = False
+server_running = False
+server = HTTPServer((socket.gethostbyname(
+    socket.gethostname()), 0), HTTPRequestHandler)
 try:
     def run():
+        global server_running, server
         acceptedUsernameText = "abcdefghijklmnopqrstuvwxyz1234567890-_"
         cellSize = 200
         screenPos = [0, 0]
@@ -243,8 +258,6 @@ try:
         invHoldingItemstack = ""
         savedRotation = None
         data = ""
-        if not data:
-            running = False
         lines = []
         players = []
         locations = []
@@ -255,9 +268,6 @@ try:
         SERVERMODE = "none"
         host = ""
         port = ""
-        server = HTTPServer((socket.gethostbyname(
-            socket.gethostname()), 0), HTTPRequestHandler)
-        server_running = False
         pg.display.flip()
 
         # try:
@@ -295,11 +305,12 @@ try:
                 lastActions = lines[3][14:].split(", ")
                 colors = lines[4][8:].split(", ")
                 directions = lines[5][12:].split(", ")
-                grid = lines[7:]
+                grid = lines[8:]
                 if len(players) > len(playerPrevPositions):
                     for i in range(len(players) - len(playerPrevPositions)):
                         playerPrevPositions.append(locations[i])
                         mostRecentPlayerPositions.append(locations[i])
+                        playerAnims.append(0)
                 newGrid = []
                 if playerPrevPositions:
                     for i in range(len(players)):
@@ -830,17 +841,18 @@ try:
                                 screen.blit(txt_surface, ((cellSize*(int(
                                     location[0]) - leftOffset + 0.5)+screenPos[0]) - (width)/2, -cellSize*0.2 + cellSize*(int(location[1]) - topOffset)+screenPos[1]))
                 else:
-                    location = locations[index].split(":")
-                    topOffset = -1/maxPlayerAnim * playerAnims[index]
-                    leftOffset = -1/maxPlayerAnim * playerAnims[index]
-                    topOffset *= int(mostRecentPlayerPositions[index].split(":")[
-                        1]) - int(location[1])
-                    leftOffset *= int(mostRecentPlayerPositions[index].split(":")[
-                        0]) - int(location[0])
+                    if name in players:
+                        location = locations[index].split(":")
+                        topOffset = -1/maxPlayerAnim * playerAnims[index]
+                        leftOffset = -1/maxPlayerAnim * playerAnims[index]
+                        topOffset *= int(mostRecentPlayerPositions[index].split(":")[
+                            1]) - int(location[1])
+                        leftOffset *= int(mostRecentPlayerPositions[index].split(":")[
+                            0]) - int(location[0])
 
-                    if cellSize*(int(location[0])+1 - leftOffset)+screenPos[0] >= 0 and cellSize*(int(location[0]) - leftOffset)+screenPos[0] <= pg.display.get_window_size()[0] and cellSize*(int(location[1])+1 - topOffset)+screenPos[1] >= 0 and cellSize*(int(location[1]) - topOffset)+screenPos[1] <= pg.display.get_window_size()[1]:
-                        drawImage(allPlayerImages[indexOfPlayerImage(colors[index], directions[index])]["data"], (cellSize*(int(
-                            location[0]) + 0.05 - leftOffset)+screenPos[0], cellSize*(int(location[1]) + 0.05 - topOffset)+screenPos[1]), (cellSize*0.9, cellSize*0.9))
+                        if cellSize*(int(location[0])+1 - leftOffset)+screenPos[0] >= 0 and cellSize*(int(location[0]) - leftOffset)+screenPos[0] <= pg.display.get_window_size()[0] and cellSize*(int(location[1])+1 - topOffset)+screenPos[1] >= 0 and cellSize*(int(location[1]) - topOffset)+screenPos[1] <= pg.display.get_window_size()[1]:
+                            drawImage(allPlayerImages[indexOfPlayerImage(colors[index], directions[index])]["data"], (cellSize*(int(
+                                location[0]) + 0.05 - leftOffset)+screenPos[0], cellSize*(int(location[1]) + 0.05 - topOffset)+screenPos[1]), (cellSize*0.9, cellSize*0.9))
 
                 size = pg.display.get_window_size()
                 if name in players:
@@ -991,11 +1003,47 @@ try:
                                         target=server.serve_forever).start()
                                     server_running = True
                                 if SERVERMODE == "singleplayer" or SERVERMODE == "host":
-                                    pass
+                                    lines = save.read_text().split("\n")
+                                    if name not in lines[0][9:].split(", "):
+                                        defaultAtributes = lines[6][20:].split(
+                                            ", ")
+                                        if len(lines[0].split(": ")[1]) == 0:
+                                            # Username
+                                            lines[0] += name
+                                            # Location
+                                            lines[1] += defaultAtributes[0]
+                                            # Inventory
+                                            lines[2] += defaultAtributes[1]
+                                            # Last signal
+                                            lines[3] += defaultAtributes[2]
+                                            # Color
+                                            lines[4] += preferredColor
+                                            # Direction
+                                            lines[5] += defaultAtributes[3]
+                                        else:
+                                            # Username
+                                            lines[0] += ", " + \
+                                                name
+                                            # Location
+                                            lines[1] += ", " + \
+                                                defaultAtributes[0]
+                                            # Inventory
+                                            lines[2] += ", " + \
+                                                defaultAtributes[1]
+                                            # Last signal
+                                            lines[3] += ", " + \
+                                                defaultAtributes[2]
+                                            # Color
+                                            lines[4] += ", " + \
+                                                preferredColor
+                                            # Direction
+                                            lines[5] += ", " + \
+                                                defaultAtributes[3]
+                                        save.write_text("\n".join(lines))
                                 elif SERVERMODE == "join":
-                                    if requests.get("http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayerTest {name}").text == 0:
+                                    if "0" in requests.get("http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", data=f"joinPlayerTest {name}").text:
                                         requests.post(
-                                            "http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayer")
+                                            "http://" + host[0] + ".".join(list(host[1:5])) + host[5] + ":" + port + "/", f"joinPlayer {name} {preferredColor}")
 
                 screen.fill("black")
                 pg.draw.circle(screen, "white",
@@ -1042,8 +1090,12 @@ try:
 
     run()
 except BaseException as error:
-    if (runningInEditor):
+    if runningInEditor:
+        if server_running:
+            server.shutdown()
         raise error
     else:
         Path("errorLog.txt").write_text(Path("errorLog.txt").read_text() +
                                         "\n" + datetime.now().strftime("%Y, %m, %d at %H:%M:%S.%f") + ":  " + str(error))
+if server_running:
+    server.shutdown()
